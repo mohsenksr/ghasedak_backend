@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'apps.account',
     'apps.channel',
+    'apps.channel_administration',
     'apps.report',
     'apps.shared',
 ]

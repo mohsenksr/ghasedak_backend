@@ -2,6 +2,12 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import APIException
 
 
+class UnauthorizedError(APIException):
+    status_code = 401
+    default_detail = _('unauthorized error')
+    default_code = 'unauthorized_error'
+
+
 class IncompleteRequestError(APIException):
     status_code = 400
     default_detail = _('incomplete request')
