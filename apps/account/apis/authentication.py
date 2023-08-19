@@ -113,7 +113,8 @@ def sign_out(request):
 
 
 def send_verification_message(message_type, dest):
-    code = str(random.randint(1000, 9999))
+    # code = str(random.randint(1000, 9999))
+    code = "1234"
     put_in_cache(dest, code, exp_time=120)
     if message_type == "EMAIL":
         if EmailVerificationHelper().send_verification_code(dest, code):

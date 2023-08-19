@@ -13,7 +13,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['token', 'email', 'first_name', 'last_name', 'password', 'role']
+        fields = ['token', 'email', 'first_name', 'last_name', 'username', 'password', 'role']
 
     def validate_token(self, value):
         if not check_in_cache(SIGN_UP_TOKEN_PREFIX + value.split("::")[1], value):
@@ -24,8 +24,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         first_name, last_name = validated_data['first_name'], validated_data['last_name']
         phone, email = validated_data['token'].split('::')[1], validated_data['email']
         role, password = validated_data['role'], validated_data['password']
+        username = validated_data['username']
         user = User.objects.create_user(
-            username=phone,
+            username=username,
             password=password,
             first_name=first_name,
             last_name=last_name,
