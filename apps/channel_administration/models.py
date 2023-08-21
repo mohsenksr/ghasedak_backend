@@ -12,3 +12,8 @@ class ChannelAdmin(models.Model):
     channel = models.ForeignKey(to="channel.Channel", related_name="admins", on_delete=models.CASCADE)
     percent = models.IntegerField()
 
+    class Meta:
+        unique_together = ("admin", "channel",)
+
+    def __str__(self):
+        return str(self.channel) + " - " + str(self.admin)

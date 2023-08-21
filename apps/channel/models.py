@@ -19,11 +19,21 @@ class Channel(models.Model):
     def __str__(self):
         return self.title
 
+    @property
+    def sum_admin_percents(self):
+        sum = 0
+        for admin in self.admins.all():
+            sum += admin.percent
+        return sum
+
 
 class Membership(models.Model):
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     channel = models.ForeignKey(to=Channel, related_name="members", on_delete=models.CASCADE)
     user = models.ForeignKey(to="account.User", related_name="member_channels", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("user", "channel",)
 
     def __str__(self):
         return self.user.username + " - " + self.channel.title
@@ -47,6 +57,9 @@ class Subscription(models.Model):
         blank=False,
     )
 
+    class Meta:
+        unique_together = ("duration", "channel",)
+
     def __str__(self):
         return self.channel.title + " - " + self.duration
 
@@ -55,6 +68,9 @@ class UserSubscription(models.Model):
     created_date = models.DateTimeField(auto_now_add=True, null=True)
     subscription = models.ForeignKey(to=Subscription, related_name="users", on_delete=models.CASCADE)
     user = models.ForeignKey(to="account.User", related_name="subscriptions", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("user", "subscription",)
 
     def __str__(self):
         return str(self.subscription) + " - " + self.user.username

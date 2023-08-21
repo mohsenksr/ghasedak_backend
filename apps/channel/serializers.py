@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.channel.models import Channel, Content, Membership
+from apps.channel.models import Channel, Content, Membership, Subscription
 from apps.channel_administration.models import ChannelAdmin
 
 
@@ -49,6 +49,7 @@ class MemberChannelLeanSerializer(serializers.ModelSerializer):
         else:
             return member_channel.channel.created_date
 
+
 class ChannelInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Channel
@@ -59,3 +60,9 @@ class ChannelContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
         fields = ["id", "created_date", "type", "text", "image", "video", "voice", "edited"]
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ["id", "channel_id", "duration", "price"]

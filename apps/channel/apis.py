@@ -2,12 +2,12 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from apps.channel.exceptions import IncorrectChannelIdError
-from apps.channel.models import Channel, Membership, Content
+from apps.channel.exceptions import InvalidChannelIdError
+from apps.channel.models import Channel, Membership, Content, Subscription
 from apps.channel.serializers import ChannelLeanSerializer, AdminChannelLeanSerializer, MemberChannelLeanSerializer, \
-    ChannelInfoSerializer, ChannelContentSerializer
+    ChannelInfoSerializer, ChannelContentSerializer, SubscriptionSerializer
 from apps.channel_administration.models import ChannelAdmin
-from apps.shared import UnauthorizedError
+from apps.shared import UnauthorizedError, InvalidRequestError
 
 
 class GetUserChannelsApi(RetrieveAPIView):
@@ -42,7 +42,7 @@ class CreateChannelApi(CreateAPIView):
             return Response(status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            raise IncorrectChannelIdError()
+            raise InvalidChannelIdError()
 
 
 class JoinChannelApi(RetrieveAPIView):
@@ -56,7 +56,7 @@ class JoinChannelApi(RetrieveAPIView):
             return Response(status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            raise IncorrectChannelIdError()
+            raise InvalidChannelIdError()
 
 
 class GetChannelDescriptionApi(RetrieveAPIView):
@@ -66,7 +66,7 @@ class GetChannelDescriptionApi(RetrieveAPIView):
         try:
             channel = Channel.objects.get(id=channel_id)
         except Exception as e:
-            raise IncorrectChannelIdError()
+            raise InvalidChannelIdError()
 
         data = self.get_serializer(channel).data
         return Response(data, status=status.HTTP_200_OK)
@@ -79,8 +79,54 @@ class GetChannelContentsApi(RetrieveAPIView):
         try:
             channel = Channel.objects.get(id=channel_id)
         except Exception as e:
-            raise IncorrectChannelIdError()
+            raise InvalidChannelIdError()
 
         contents = Content.objects.filter(channel_id=channel_id)
         data = self.get_serializer(contents, many=True).data
         return Response(data, status=status.HTTP_200_OK)
+
+
+class CreateSubscriptionApi(CreateAPIView):
+    serializer_class = SubscriptionSerializer
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_anonymous:
+            raise UnauthorizedError()
+
+        try:
+            channel_id = int(request.data["channel_id"])
+            duration = request.data["duration"]
+            price = int(request.data["price"])
+        except:
+            raise InvalidRequestError()
+
+        try:
+            channel = Channel.objects.get(id=channel_id)
+        except:
+            raise InvalidChannelIdError()
+
+        if channel.creator != request.user:
+            raise UnauthorizedError()
+
+        try:
+            print("ok")
+            Subscription.objects.create(channel=channel, duration=duration, price=price)
+            return Response(status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            raise InvalidChannelIdError()
+
+
+class ChannelSubscriptionsApi(RetrieveAPIView):
+    serializer_class = SubscriptionSerializer
+    queryset = Subscription.objects.all()
+
+    def retrieve(self, request, channel_id, *args, **kwargs):
+        try:
+            channel = Channel.objects.get(id=channel_id)
+        except Exception as e:
+            raise InvalidChannelIdError()
+
+        subscriptions = Subscription.objects.filter(channel=channel)
+        return Response(self.get_serializer(subscriptions, many=True).data)
