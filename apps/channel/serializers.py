@@ -50,6 +50,15 @@ class MemberChannelLeanSerializer(serializers.ModelSerializer):
             return member_channel.channel.created_date
 
 
+class MemberUserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username")
+    full_name = serializers.CharField(source="user.full_name")
+
+    class Meta:
+        model = Membership
+        fields = ["created_date", "username", "full_name"]
+
+
 class ChannelInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Channel

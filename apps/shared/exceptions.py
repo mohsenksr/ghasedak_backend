@@ -30,3 +30,9 @@ class UnknownErrorOccurred(APIException):
     status_code = 400
     default_detail = _('unknown error occurred')
     default_code = 'unknown_error_occurred'
+
+
+class BankErrorOccurred(APIException):
+    status_code = 400
+    default_detail = _('bank error occurred')
+    default_code = 'bank_error_occurred'

@@ -2,12 +2,13 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from apps.channel.exceptions import InvalidChannelIdError
-from apps.channel.models import Channel, Membership, Content, Subscription
+from apps.channel.exceptions import InvalidChannelIdError, InvalidSubscriptionIdError, AlreadyBoughtError
+from apps.channel.models import Channel, Membership, Content, Subscription, UserSubscription, UserBoughtContent
 from apps.channel.serializers import ChannelLeanSerializer, AdminChannelLeanSerializer, MemberChannelLeanSerializer, \
     ChannelInfoSerializer, ChannelContentSerializer, SubscriptionSerializer
 from apps.channel_administration.models import ChannelAdmin
 from apps.shared import UnauthorizedError, InvalidRequestError
+from utils.helpers.bank_helper import BankHelper
 
 
 class GetUserChannelsApi(RetrieveAPIView):
@@ -118,7 +119,7 @@ class CreateSubscriptionApi(CreateAPIView):
             raise InvalidChannelIdError()
 
 
-class ChannelSubscriptionsApi(RetrieveAPIView):
+class GetChannelSubscriptionsApi(RetrieveAPIView):
     serializer_class = SubscriptionSerializer
     queryset = Subscription.objects.all()
 
@@ -130,3 +131,59 @@ class ChannelSubscriptionsApi(RetrieveAPIView):
 
         subscriptions = Subscription.objects.filter(channel=channel)
         return Response(self.get_serializer(subscriptions, many=True).data)
+
+
+class SellSubscriptionApi(RetrieveAPIView):
+    def retrieve(self, request, subscription_id, *args, **kwargs):
+        user = request.user
+        if user.is_anonymous:
+            raise UnauthorizedError()
+
+        try:
+            subscription = Subscription.objects.get(id=subscription_id)
+        except:
+            raise InvalidSubscriptionIdError()
+
+        if UserSubscription.objects.filter(user=user, subscription=subscription).exists():
+            raise AlreadyBoughtError()
+
+        if BankHelper().payment(subscription.price):
+            divide_benefit(subscription.price, subscription.channel)
+
+        UserSubscription.objects.create(user=user, subscription=subscription)
+        return Response()
+
+
+class SellContentApi(RetrieveAPIView):
+    def retrieve(self, request, content_id, *args, **kwargs):
+        user = request.user
+        if user.is_anonymous:
+            raise UnauthorizedError()
+
+        try:
+            content = Content.objects.get(id=content_id)
+        except:
+            raise InvalidSubscriptionIdError()
+
+        if UserBoughtContent.objects.filter(user=user, content=content).exists():
+            raise AlreadyBoughtError()
+
+        if BankHelper().payment(content.price):
+            divide_benefit(content.price, content.channel)
+
+        UserBoughtContent.objects.create(user=user, content=content)
+        return Response()
+
+
+def divide_benefit(amount, channel):
+    remained_amount = amount
+    for admin in channel.admins.all():
+        user = admin.admin
+        user_benefit = (admin.percent / 100) * amount
+        user.credit += int(user_benefit)
+        user.save()
+        remained_amount -= (admin.percent / 100) * amount
+
+    channel_creator = channel.creator
+    channel_creator.credit += int(remained_amount)
+    channel_creator.save()

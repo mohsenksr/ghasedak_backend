@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.channel.models import Channel, Membership, Subscription, UserSubscription, Content
+from apps.channel.models import Channel, Membership, Subscription, UserSubscription, Content, UserBoughtContent
 
 
 @admin.register(Channel)
@@ -26,9 +26,16 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('subscription', 'user', 'created_date')
+    list_display = ('id', 'subscription', 'user', 'created_date')
     search_fields = ('id', 'subscription__id', 'subscription__channel__id', 'user__username')
     raw_id_fields = ('subscription', 'user',)
+
+
+@admin.register(UserBoughtContent)
+class UserBoughtContentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'content', 'user', 'created_date')
+    search_fields = ('id', 'content__id', 'content__channel__id', 'user__username')
+    raw_id_fields = ('content', 'user',)
 
 
 @admin.register(Content)

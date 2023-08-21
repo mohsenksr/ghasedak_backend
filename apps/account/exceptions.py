@@ -52,7 +52,7 @@ class AddressNotFoundError(APIException):
     default_code = 'address_not_found'
 
 
-class CityNotFoundError(APIException):
-    status_code = 404
-    default_detail = _('city not found')
-    default_code = 'city_not_found'
+class NationalIdRequiredError(APIException):
+    status_code = 400
+    default_detail = _('national id required')
+    default_code = 'national_id_required'

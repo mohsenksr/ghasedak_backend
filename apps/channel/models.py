@@ -17,7 +17,7 @@ class Channel(models.Model):
     bio = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return self.title
+        return self.channel_id
 
     @property
     def sum_admin_percents(self):
@@ -94,3 +94,18 @@ class Content(models.Model):
     video = models.FileField(null=True, blank=True)
     voice = models.FileField(null=True, blank=True)
     edited = models.BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.channel) + " - " + str(self.created_date)
+
+
+class UserBoughtContent(models.Model):
+    created_date = models.DateTimeField(auto_now_add=True, null=True)
+    content = models.ForeignKey(to=Content, related_name="users", on_delete=models.CASCADE)
+    user = models.ForeignKey(to="account.User", related_name="payed_contents", on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("user", "content",)
+
+    def __str__(self):
+        return str(self.content) + " - " + self.user.username

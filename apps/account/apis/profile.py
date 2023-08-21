@@ -4,11 +4,14 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView, DestroyAPIView
 from django.utils.html import escape
+
+from apps.account.exceptions import NationalIdRequiredError
 from apps.account.models import User
 from apps.account.serializers import UserSetProfileSerializer, UserInfoSerializer
 from rest_framework import status
 
 from apps.shared import InvalidRequestError
+from utils.helpers.bank_helper import BankHelper
 
 
 class ProfileApi(ModelViewSet):
@@ -32,6 +35,12 @@ class ProfileApi(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         kwargs.update({'partial': True})
+        if "cc_number" in request.data:
+            if not "national_id" in request.data:
+                raise NationalIdRequiredError()
+
+        BankHelper().check_national_id(request.data["national_id"], request.data["cc_number"])
+        
         return super().update(request, *args, **kwargs)
 
 

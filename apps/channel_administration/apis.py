@@ -4,16 +4,17 @@ from rest_framework.response import Response
 from rest_framework import status
 from apps.account.models import User
 from apps.channel.exceptions import InvalidChannelIdError
-from apps.channel.models import Channel
-from apps.channel_administration.exceptions import InvalidAdminIdError, InvalidPercentError
+from apps.channel.models import Channel, Subscription, Membership
+from apps.channel.serializers import SubscriptionSerializer, MemberUserSerializer
+from apps.channel_administration.exceptions import InvalidAdminIdError, InvalidPercentError, EmptyBalanceError, \
+    IncompleteProfileError
 from apps.channel_administration.models import ChannelAdmin
-from apps.channel_administration.serializers import CreateAdminSerializer
+from apps.channel_administration.serializers import AdminSerializer
 from apps.shared import UnauthorizedError, InvalidRequestError
+from utils.helpers.bank_helper import BankHelper
 
 
 class CreateAdminApi(CreateAPIView):
-    serializer_class = CreateAdminSerializer
-
     def post(self, request, *args, **kwargs):
         user = request.user
         if user.is_anonymous:
@@ -49,3 +50,41 @@ class CreateAdminApi(CreateAPIView):
 
         except Exception as e:
             raise InvalidChannelIdError()
+
+
+class GetChannelAdministrationApi(RetrieveAPIView):
+
+    def retrieve(self, request, channel_id, *args, **kwargs):
+        try:
+            channel = Channel.objects.get(id=channel_id)
+        except Exception as e:
+            raise InvalidChannelIdError()
+
+        subscriptions = Subscription.objects.filter(channel=channel)
+        subscriptions_data = SubscriptionSerializer(subscriptions, many=True).data
+
+        admins = ChannelAdmin.objects.filter(channel=channel)
+        admins_data = AdminSerializer(admins, many=True).data
+
+        members = Membership.objects.filter(channel=channel)
+        members_data = MemberUserSerializer(members, many=True).data
+
+        return Response({"subscriptions": subscriptions_data, "admins": admins_data, "members": members_data})
+
+
+class ChannelAdminClearAccountApi(RetrieveAPIView):
+    def retrieve(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_anonymous or (not user.admin_channels.all() and not user.owner_channels.all()):
+            raise UnauthorizedError()
+
+        if user.credit == 0:
+            raise EmptyBalanceError()
+
+        if not user.cc_number:
+            raise IncompleteProfileError()
+
+        if BankHelper().deposit_to_account(user.credit, user.cc_number):
+            user.credit = 0
+            user.save()
+            return Response(status=status.HTTP_200_OK)
