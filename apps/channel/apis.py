@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.channel.exceptions import InvalidChannelIdError, InvalidSubscriptionIdError, AlreadyBoughtError
-from apps.channel.models import Channel, Membership, Content, Subscription, UserSubscription, UserBoughtContent
+from apps.channel.models import Channel, Membership, Content, Subscription, UserSubscription, UserBoughtContent, \
+    ContentType
 from apps.channel.serializers import ChannelLeanSerializer, AdminChannelLeanSerializer, MemberChannelLeanSerializer, \
     ChannelInfoSerializer, ChannelContentSerializer, SubscriptionSerializer
 from apps.channel_administration.models import ChannelAdmin
@@ -30,7 +31,7 @@ class GetUserChannelsApi(RetrieveAPIView):
 class CreateChannelApi(CreateAPIView):
     serializer_class = ChannelInfoSerializer
 
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         user = request.user
         if user.is_anonymous:
             raise UnauthorizedError()
@@ -87,10 +88,51 @@ class GetChannelContentsApi(RetrieveAPIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+class GetChannelContentFileApi(RetrieveAPIView):
+    def retrieve(self, request, content_id, *args, **kwargs):
+        user = request.user
+        if user.is_anonymous:
+            raise UnauthorizedError()
+
+        try:
+            content = Content.objects.get(id=content_id)
+            channel = content.channel
+        except Exception as e:
+            raise InvalidChannelIdError()
+
+        has_active_subscription = UserSubscription.objects.filter(
+            subscription__channel=channel, user=user
+        ).exists() and UserSubscription.objects.filter(
+            subscription__channel=channel, user=user
+        ).first().is_active
+
+        has_bought_content = UserBoughtContent.objects.filter(content=content, user=user).exists()
+
+        user_owner_channels = user.owner_channels.all().values_list("id", flat=True)
+        user_admin_channels = user.admin_channels.all().values_list("channel_id", flat=True)
+
+        is_admin = channel.id in user_owner_channels or channel.id in user_admin_channels
+
+        is_free_content = content.free
+
+        if has_active_subscription or has_bought_content or is_free_content or is_admin:
+
+            if content.type == ContentType.text:
+                return Response({"text": content.text})
+            elif content.type == ContentType.image:
+                return Response({"image": content.image})
+            elif content.type == ContentType.video:
+                return Response({"video": content.video})
+            elif content.type == ContentType.voice:
+                return Response({"voice": content.voice})
+
+        raise UnauthorizedError()
+
+
 class CreateSubscriptionApi(CreateAPIView):
     serializer_class = SubscriptionSerializer
 
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
         user = request.user
         if user.is_anonymous:
             raise UnauthorizedError()
@@ -176,7 +218,7 @@ class SellContentApi(RetrieveAPIView):
 
 
 def divide_benefit(amount, channel):
-    remained_amount = amount
+    remained_amount = (90 / 100) * amount
     for admin in channel.admins.all():
         user = admin.admin
         user_benefit = (admin.percent / 100) * amount

@@ -1,5 +1,13 @@
+from datetime import datetime, timedelta
+
 from django.db import models
 from django.utils.translation import gettext as _
+
+from ghasedak.storage_backends import MediaStorage
+
+post_image_storage = MediaStorage(location=f'{MediaStorage.BASE_LOCATION}/posts/image')
+post_voice_storage = MediaStorage(location=f'{MediaStorage.BASE_LOCATION}/posts/voice')
+post_video_storage = MediaStorage(location=f'{MediaStorage.BASE_LOCATION}/posts/video')
 
 
 class Channel(models.Model):
@@ -75,6 +83,24 @@ class UserSubscription(models.Model):
     def __str__(self):
         return str(self.subscription) + " - " + self.user.username
 
+    @property
+    def is_active(self):
+        active = True
+        if self.subscription.duration == SubscriptionDuration.one_month:
+            active = datetime.now().date() - self.created_date.date() < timedelta(days=30)
+        elif self.subscription.duration == SubscriptionDuration.three_months:
+            active = datetime.now().date() - self.created_date.date() < timedelta(days=90)
+        elif self.subscription.duration == SubscriptionDuration.six_months:
+            active = datetime.now().date() - self.created_date.date() < timedelta(days=180)
+        elif self.subscription.duration == SubscriptionDuration.twelve_months:
+            active = datetime.now().date() - self.created_date.date() < timedelta(days=360)
+
+        if not active:
+            self.delete()
+            return False
+
+        return True
+
 
 class ContentType(models.TextChoices):
     text = "text", _("text")
@@ -89,11 +115,13 @@ class Content(models.Model):
     sender = models.ForeignKey(to="account.User", related_name="posts", on_delete=models.CASCADE)
     type = models.CharField(max_length=16, choices=ContentType.choices, default=ContentType.text)
     price = models.IntegerField(null=True, blank=True)
+    summary = models.TextField(null=True, blank=True)
     text = models.TextField(null=True, blank=True)
-    image = models.ImageField(null=True, blank=True)
-    video = models.FileField(null=True, blank=True)
-    voice = models.FileField(null=True, blank=True)
+    image = models.ImageField(storage=post_image_storage, null=True, blank=True)
+    video = models.FileField(storage=post_video_storage, null=True, blank=True)
+    voice = models.FileField(storage=post_voice_storage, null=True, blank=True)
     edited = models.BooleanField(default=False)
+    free = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.channel) + " - " + str(self.created_date)

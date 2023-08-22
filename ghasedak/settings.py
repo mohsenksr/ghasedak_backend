@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+import os
 from datetime import timedelta
 
 from decouple import config
@@ -16,7 +17,6 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -28,7 +28,6 @@ SECRET_KEY = 'django-insecure-3sw(y@(vxq6ux+k-ulug-b!=8c_(b6e$$dyf2-f21htxg*=%+7
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -82,7 +81,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ghasedak.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
@@ -94,19 +92,18 @@ WSGI_APPLICATION = 'ghasedak.wsgi.application'
 # }
 
 DATABASES = {
-        'default': {
-            'ENGINE': 'django_prometheus.db.backends.postgresql',
-            'HOST': config('DB_HOST', default='localhost'),
-            'PORT': config('DB_PORT', default='5432'),
-            'NAME': config('DB_NAME', default='ghasedak'),
-            'USER': config('DB_USER', default='ghased'),
-            'PASSWORD': config('DB_PASSWORD', default='pass'),
-            'TEST': {
-                'NAME': f'test_ghasedak',
-            },
-        }
+    'default': {
+        'ENGINE': 'django_prometheus.db.backends.postgresql',
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
+        'NAME': config('DB_NAME', default='ghasedak'),
+        'USER': config('DB_USER', default='ghased'),
+        'PASSWORD': config('DB_PASSWORD', default='pass'),
+        'TEST': {
+            'NAME': f'test_ghasedak',
+        },
     }
-
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -126,7 +123,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
@@ -138,7 +134,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -148,7 +143,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 AUTH_USER_MODEL = "account.User"
 
@@ -160,21 +154,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
-]
-
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend', 'apps.account.utils.backends.PhoneBackend']
 
 SIMPLE_JWT = {
@@ -182,3 +161,23 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", "")
+AWS_STORAGE_BUCKET_NAME = config("AWS_BUCKET_NAME", "")
+AWS_S3_HOST = config("AWS_URL", "")
+AWS_S3_ENDPOINT_URL = config("AWS_URL", "")
+AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
+AWS_S3_FILE_OVERWRITE = True
+AWS_QUERYSTRING_AUTH = False
+AWS_DEFAULT_ACL = "public-read"
+
+#
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATICFILES_STORAGE = f'ghasedak.storage_backends.StaticStorage'
+
+# Media
+MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+PUBLIC_MEDIA_LOCATION = 'media'
+DEFAULT_FILE_STORAGE = f'ghasedak.storage_backends.MediaStorage'

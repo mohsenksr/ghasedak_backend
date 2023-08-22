@@ -68,7 +68,7 @@ class ChannelInfoSerializer(serializers.ModelSerializer):
 class ChannelContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content
-        fields = ["id", "created_date", "type", "text", "image", "video", "voice", "edited"]
+        fields = ["id", "created_date", "type", "free", "summary", "edited"]
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):

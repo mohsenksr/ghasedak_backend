@@ -24,3 +24,4 @@ class IncompleteProfileError(APIException):
     status_code = 400
     default_detail = _('incomplete profile')
     default_code = 'incomplete profile'
+
