@@ -49,7 +49,7 @@ class CreateAdminApi(CreateAPIView):
         try:
             print("ok")
             ChannelAdmin.objects.create(channel=channel, admin=admin, percent=percent)
-            return Response(status=status.HTTP_201_CREATED)
+            return Response({}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             raise InvalidChannelIdError()
@@ -90,7 +90,7 @@ class ChannelAdminClearAccountApi(RetrieveAPIView):
         if BankHelper().deposit_to_account(user.credit, user.cc_number):
             user.credit = 0
             user.save()
-            return Response(status=status.HTTP_200_OK)
+            return Response({}, status=status.HTTP_200_OK)
 
 
 class AddContentApi(CreateAPIView):
@@ -150,6 +150,7 @@ class AddContentFileApi(CreateAPIView):
                 content.text = text
                 content.save()
                 return Response(
+                    {},
                     # {"url": request.build_absolute_uri(user.avatar.url)},
                     status=status.HTTP_200_OK,
                 )
@@ -179,6 +180,7 @@ class AddContentFileApi(CreateAPIView):
 
         content.save()
         return Response(
+            {},
             # {"url": request.build_absolute_uri(user.avatar.url)},
             status=status.HTTP_200_OK,
         )

@@ -41,7 +41,7 @@ class CreateChannelApi(CreateAPIView):
 
         try:
             Channel.objects.create(channel_id=channel_id, title=title, bio=bio, creator=request.user)
-            return Response(status=status.HTTP_201_CREATED)
+            return Response({}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             raise InvalidChannelIdError()
@@ -55,7 +55,7 @@ class JoinChannelApi(RetrieveAPIView):
         try:
             channel = Channel.objects.get(channel_id=channel_id)
             Membership.objects.create(channel=channel, user=user)
-            return Response(status=status.HTTP_201_CREATED)
+            return Response({}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             raise InvalidChannelIdError()
@@ -155,7 +155,7 @@ class CreateSubscriptionApi(CreateAPIView):
         try:
             print("ok")
             Subscription.objects.create(channel=channel, duration=duration, price=price)
-            return Response(status=status.HTTP_201_CREATED)
+            return Response({}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             raise InvalidChannelIdError()
@@ -193,7 +193,7 @@ class SellSubscriptionApi(RetrieveAPIView):
             divide_benefit(subscription.price, subscription.channel)
 
         UserSubscription.objects.create(user=user, subscription=subscription)
-        return Response()
+        return Response({})
 
 
 class SellContentApi(RetrieveAPIView):
@@ -214,7 +214,7 @@ class SellContentApi(RetrieveAPIView):
             divide_benefit(content.price, content.channel)
 
         UserBoughtContent.objects.create(user=user, content=content)
-        return Response()
+        return Response({})
 
 
 def divide_benefit(amount, channel):
