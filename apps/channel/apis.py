@@ -172,7 +172,7 @@ class GetChannelSubscriptionsApi(RetrieveAPIView):
             raise InvalidChannelIdError()
 
         subscriptions = Subscription.objects.filter(channel=channel)
-        return Response(self.get_serializer(subscriptions, many=True).data)
+        return Response({"subscriptions": self.get_serializer(subscriptions, many=True).data})
 
 
 class SellSubscriptionApi(RetrieveAPIView):
