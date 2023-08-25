@@ -104,6 +104,8 @@ class AddContentApi(CreateAPIView):
         except Exception as e:
             raise InvalidChannelIdError()
 
+        channel_id = int(channel_id)
+
         user_owner_channels = user.owner_channels.all().values_list("id", flat=True)
         user_admin_channels = user.admin_channels.all().values_list("channel_id", flat=True)
 
