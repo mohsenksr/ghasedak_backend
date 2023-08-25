@@ -85,7 +85,7 @@ class GetChannelContentsApi(RetrieveAPIView):
 
         contents = Content.objects.filter(channel_id=channel_id)
         data = self.get_serializer(contents, many=True).data
-        return Response(data, status=status.HTTP_200_OK)
+        return Response({"posts": data}, status=status.HTTP_200_OK)
 
 
 class GetChannelContentFileApi(RetrieveAPIView):
