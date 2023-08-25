@@ -6,9 +6,10 @@ from apps.channel.exceptions import InvalidChannelIdError, InvalidSubscriptionId
 from apps.channel.models import Channel, Membership, Content, Subscription, UserSubscription, UserBoughtContent, \
     ContentType
 from apps.channel.serializers import ChannelLeanSerializer, AdminChannelLeanSerializer, MemberChannelLeanSerializer, \
-    ChannelInfoSerializer, ChannelContentSerializer, SubscriptionSerializer
+    ChannelInfoSerializer, ChannelContentSerializer, SubscriptionSerializer, ChannelContentFileSerializer
 from apps.channel_administration.models import ChannelAdmin
 from apps.shared import UnauthorizedError, InvalidRequestError
+from ghasedak.storage_backends import MediaStorage
 from utils.helpers.bank_helper import BankHelper
 
 
@@ -89,6 +90,7 @@ class GetChannelContentsApi(RetrieveAPIView):
 
 
 class GetChannelContentFileApi(RetrieveAPIView):
+    serializer_class = ChannelContentFileSerializer
     def retrieve(self, request, content_id, *args, **kwargs):
         user = request.user
         if user.is_anonymous:
@@ -116,15 +118,16 @@ class GetChannelContentFileApi(RetrieveAPIView):
         is_free_content = content.free
 
         if has_active_subscription or has_bought_content or is_free_content or is_admin:
+            data = self.get_serializer(content).data
 
             if content.type == ContentType.text:
                 return Response({"text": content.text})
             elif content.type == ContentType.image:
-                return Response({"image": content.image})
+                return Response({"image": data["image"]})
             elif content.type == ContentType.video:
-                return Response({"video": content.video})
+                return Response({"video": data["video"]})
             elif content.type == ContentType.voice:
-                return Response({"voice": content.voice})
+                return Response({"voice": data["voice"]})
 
         raise UnauthorizedError()
 
